@@ -4,27 +4,25 @@ const express = require('express')
 const app = express()
 const port = 3001
 
-app.use(express.json())
-app.use(function (req, res, next) {
-    res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
-    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Access-Control-Allow-Headers');
-    next();
-})
-
 app.listen(port, () => {
     console.log(`App running on port ${port}.`)
 })
 
 //database
-const Pool = require('pg').Pool
-const pool = new Pool({
+const { Client } = require('pg')
+const client = new Client({
     user: 'lab2_web2_user',
-    host: 'dpg-cdjbjjsgqg433fds9qc0-a',
+    host: 'pg-cdjbjjsgqg433fds9qc0-a.oregon-postgres.render.com',
     database: 'lab2_web2',
     password: 'KDd8PeRgFDdwZQroSQy4FCxEEsYwMQiE',
     port: 5432,
+    ssl: true
 })
+
+client.connect(function (err) {
+    if (err) throw err;
+    console.log("Connected!");
+});
 
 const getAllUsers = () => {
     return new Promise(function (resolve, reject) {
@@ -32,7 +30,7 @@ const getAllUsers = () => {
             if (error) {
                 reject(error)
             }
-            resolve(results.rows);
+            //resolve(results.rows);
         })
     })
 }
@@ -49,15 +47,43 @@ const insertUser = () => {
     })
 }
 
+const { Sequelize, DataTypes } = require("sequelize");
+const sequelize = new Sequelize('postgres://lab2_web2_user:KDd8PeRgFDdwZQroSQy4FCxEEsYwMQiE@dpg-cdjbjjsgqg433fds9qc0-a.oregon-postgres.render.com/lab2_web2?ssl=true');
+
+
+const User = sequelize.define("users", {
+    id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        primaryKey: true
+    },
+    username: {
+        type: DataTypes.STRING,
+        allowNull: false
+    },
+    dob: {
+        type: DataTypes.DATEONLY,
+    },
+    email: {
+        type: DataTypes.STRING,
+    }
+});
+
+sequelize.authenticate().then(() => {
+    console.log('Connection has been established successfully.');
+}).catch((error) => {
+    console.error('Unable to connect to the database: ', error);
+});
+
+sequelize.sync().then(() => {
+    console.log('Users table created successfully!');
+}).catch((error) => {
+    console.error('Unable to create table : ', error);
+});
+
 //http methods
-app.get('/', (req, res) => {
-    insertUser()
-        .then(response => {
-            res.status(200).send(response);
-        })
-        .catch(error => {
-            res.status(500).send(error);
-        })
+app.get('/', async (req, res) => {
+    res.status(200).send("ok");
 })
 
 app.post("/post", (req, res) => {
