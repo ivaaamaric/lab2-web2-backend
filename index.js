@@ -1,8 +1,14 @@
 //setup
-const { query } = require('express')
 const express = require('express')
 const app = express()
 const port = 3001
+var bodyParser = require('body-parser');
+
+app.use(bodyParser.urlencoded({
+    extended: false
+}));
+
+app.use(bodyParser.json());
 
 app.listen(port, () => {
     console.log(`App running on port ${port}.`)
@@ -23,29 +29,6 @@ client.connect(function (err) {
     if (err) throw err;
     console.log("Connected!");
 });
-
-const getAllUsers = () => {
-    return new Promise(function (resolve, reject) {
-        pool.query('SELECT * FROM users', (error, results) => {
-            if (error) {
-                reject(error)
-            }
-            //resolve(results.rows);
-        })
-    })
-}
-
-const insertUser = () => {
-    var query = "CREATE TABLE users (id int, name varchar(255), email varchar(255);"
-    return new Promise(function (resolve, reject) {
-        pool.query(query, (error, results) => {
-            if (error) {
-                reject(error)
-            }
-            //resolve(results.rows);
-        })
-    })
-}
 
 const { Sequelize, DataTypes } = require("sequelize");
 const sequelize = new Sequelize('postgres://lab2_web2_user:KDd8PeRgFDdwZQroSQy4FCxEEsYwMQiE@dpg-cdjbjjsgqg433fds9qc0-a.oregon-postgres.render.com/lab2_web2?ssl=true');
@@ -82,11 +65,150 @@ sequelize.sync().then(() => {
 });
 
 //http methods
+
+let fs = require('fs');
+
 app.get('/', async (req, res) => {
-    res.status(200).send("ok");
+    res.writeHead(200, {
+        'Content-Type': 'text/html'
+    });
+    fs.readFile('./index.html', null, function (error, data) {
+        if (error) {
+            res.writeHead(404);
+            res.write('Whoops! File not found!');
+        } else {
+            res.write(data);
+        }
+        res.end();
+    });
 })
 
-app.post("/post", (req, res) => {
-    console.log("Connected to React");
-    res.redirect("/");
+app.get('/safe', async (req, res) => {
+    res.writeHead(200, {
+        'Content-Type': 'text/html'
+    });
+    fs.readFile('./safe.html', null, function (error, data) {
+        if (error) {
+            res.writeHead(404);
+            res.write('Whoops! File not found!');
+        } else {
+            res.write(data);
+        }
+        res.end();
+    });
+})
+
+app.get('/unsafe', async (req, res) => {
+    for (i = 0; i < 20; i++) {
+        User.destroy({ where: { id: i } })
+        User.create({
+            id: i,
+            username: "user" + String(i),
+            dob: "2022-10-10",
+            email: "mail@mail"
+        })
+    }
+    res.writeHead(200, {
+        'Content-Type': 'text/html'
+    });
+    fs.readFile('./unsafe.html', null, function (error, data) {
+        if (error) {
+            res.writeHead(404);
+            res.write('Whoops! File not found!');
+        } else {
+            res.write(data);
+        }
+        res.end();
+    });
+})
+
+app.post('/unsafe/login', async (req, res) => {
+    const data = req.body;
+    const query = `SELECT * FROM users WHERE id = ${data.password}`;
+    client.query(query, (err, rows) => {
+        if (err) {
+            res.send(err)
+            return
+        }
+        res.json({ data: rows.rows });
+    });
+})
+
+app.post('/unsafe/info', async (req, res) => {
+    const data = req.body;
+    const query = `SELECT email, dob FROM users WHERE id = ${data.password}`;
+    client.query(query, (err, rows) => {
+        if (err) {
+            res.send(err)
+            return
+        }
+        res.json({ data: rows.rows });
+    });
+})
+
+app.post('/unsafe/blind', async (req, res) => {
+    const data = req.body;
+    const query = `SELECT id FROM users WHERE id = ${data.password}`;
+    client.query(query, (err, rows) => {
+        if (err) {
+            res.send(err)
+            return
+        }
+        res.json({ data: rows.rows });
+    });
+})
+
+app.post('/unsafe/union', async (req, res) => {
+    const data = req.body;
+    const query = `SELECT username, id FROM users WHERE id = ${data.password}`;
+    client.query(query, (err, rows) => {
+        if (err) {
+            res.send(err)
+            return
+        }
+        res.send(json({ data: rows.rows }));
+    });
+})
+
+app.post('/unsafe/chaining', async (req, res) => {
+    const data = req.body;
+    const query = `SELECT id FROM users WHERE id = ${data.password}`;
+    client.query(query, (err, rows) => {
+        if (err) {
+            res.send(err)
+            return
+        }
+        res.json({ data: rows.rows });
+    });
+})
+
+function validInput(input) {
+    if (input.match(/^[0-9]+$/)) {
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+
+app.post('/safe/login', async (req, res) => {
+    const data = req.body;
+    if (!validInput(data.password)) {
+        res.send("User id is a numeric value!")
+        return
+    }
+    User.findAll({
+        where: {
+            id: data.password
+        }
+    }).then(value => {
+        if (value.length == 0) {
+            res.send("No user with id:" + data.password)
+        } else {
+            res.send(value)
+        }
+    }).catch(err => {
+        res.send("No user with id:" + data.password)
+    })
 })
