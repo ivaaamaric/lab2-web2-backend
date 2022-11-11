@@ -51,12 +51,15 @@ const User = sequelize.define("users", {
     }
 });
 
-const safeLogin = sequelize.define("safeLogin", {
+const Login = sequelize.define("Login", {
     email: {
         type: DataTypes.STRING,
         primaryKey: true
     },
     password: {
+        type: DataTypes.STRING,
+    },
+    token: {
         type: DataTypes.STRING,
     }
 });
@@ -73,6 +76,7 @@ const unsafeLogin = sequelize.define("unsafeLogin", {
 
 sequelize.authenticate().then(() => {
     console.log('Connection has been established successfully.');
+    User.addCol
 }).catch((error) => {
     console.error('Unable to connect to the database: ', error);
 });
@@ -90,6 +94,7 @@ const NodeRSA = require('node-rsa');
 const key = new NodeRSA({ b: 512 });
 
 app.get('/', async (req, res) => {
+    user = null
     for (i = 0; i < 20; i++) {
         User.destroy({ where: { id: i } })
         User.create({
@@ -104,8 +109,8 @@ app.get('/', async (req, res) => {
         email: "user@user",
         password: "password123"
     })
-    safeLogin.destroy({ where: { email: "user@user" } })
-    safeLogin.create({
+    Login.destroy({ where: { email: "user@user" } })
+    Login.create({
         email: "user@user",
         password: key.encrypt("dKdLru9BZ6ArqAz5", 'base64')
     })
@@ -238,18 +243,21 @@ bouncer.blocked = function (req, res, next, remaining) {
         "please wait " + remaining / 1000 + " seconds");
 };
 
+var user = null
 app.post("/login/safe", bouncer.block, function (req, res) {
     const data = req.body;
-    safeLogin.findOne({
+    Login.findOne({
         where: {
             email: data.email
         }
     }).then(value => {
         if (value.length == 0) {
             res.send("Invalid email or password")
+            user = null
             return
         }
         if (data.password != key.decrypt(value.password, 'utf8')) {
+            user = null
             res.send("Invalid email or password")
             return
         }
@@ -265,14 +273,57 @@ app.post("/login/safe", bouncer.block, function (req, res) {
         request(verificationUrl, function (error, response, body) {
             body = JSON.parse(body);
             if (body.success !== undefined && !body.success) {
+                user = null
                 return res.send("Not logged in :(")
             }
-            return res.send("Logged in! :)")
+            let email = value.email
+            const token = jwt.sign(
+                { user_id: email },
+                "randomString",
+                {
+                    expiresIn: "2h",
+                }
+            );
+            user = value
+            user.token = token;
+            fs.readFile('./loggedin.html', null, function (error, data) {
+                if (error) {
+                    res.writeHead(404);
+                    res.write('Whoops! File not found!');
+                } else {
+                    res.write(data);
+                }
+                res.end();
+            });
+            return res.redirect("/private")
         });
     }).catch(err => {
         res.send("Invalid email or password")
+        user = null
     })
 });
+
+var jwt = require("jsonwebtoken")
+
+const verifyToken = (req, res, next) => {
+    const token =
+        req.body.token || req.query.token || req.headers["x-access-token"] || user.token;
+
+    if (!token) {
+        return res.status(403).send("A token is required for access to private content");
+    }
+    try {
+        const decoded = jwt.verify(token, "randomString");
+        req.user = decoded;
+    } catch (err) {
+        return res.status(401).send("Invalid Token");
+    }
+    return next();
+};
+
+app.get('/private', verifyToken, (req, res) => {
+    res.status(200).send("Welcome " + user.email + "! :)\n" + "Shhh! Private content!");
+})
 
 app.post("/login/unsafe", function (req, res) {
     const data = req.body;
