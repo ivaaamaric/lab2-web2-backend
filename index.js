@@ -313,7 +313,7 @@ const verifyToken = (req, res, next) => {
 };
 
 app.get('/private', verifyToken, (req, res) => {
-    res.status(200).send("Welcome " + user.email + "! :)\n" + "Shhh! Private content!");
+    res.status(200).send("Welcome " + user.email + "! :) " + "Shhh! Private content!");
 })
 
 app.post("/login/unsafe", function (req, res) {
