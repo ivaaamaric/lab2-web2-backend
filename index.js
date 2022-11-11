@@ -286,15 +286,6 @@ app.post("/login/safe", bouncer.block, function (req, res) {
             );
             user = value
             user.token = token;
-            fs.readFile('./loggedin.html', null, function (error, data) {
-                if (error) {
-                    res.writeHead(404);
-                    res.write('Whoops! File not found!');
-                } else {
-                    res.write(data);
-                }
-                res.end();
-            });
             return res.redirect("/private")
         });
     }).catch(err => {
