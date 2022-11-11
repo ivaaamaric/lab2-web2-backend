@@ -3,106 +3,169 @@
 
 <head>
     <script src='https://www.google.com/recaptcha/api.js'></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <title>Sigurnost</title>
 </head>
 
-<body>
-    <h1 style="color:red">SQL injection</h1>
-    <h4 style="color: red">
-        Check the checkbox before the submit buttons if you want to use the safe version of the app.<br />
+<body class="m-5">
+    <h1 class="text-center">SQL injection</h1>
+    <h4 class="text-center">
+        Toggle the checkboxes before clicking the submit buttons if you want to use the safe version of the app.<br />
         Otherwise, the app is vunerable to SQL injection attacks.
     </h4>
 
-    <h3>tautology example</h3>
-    <p>
-        In field user id insert: "(any number) OR 1 = 1" (without double quotations).
-        For example you can insert "1 OR 1=1"
-    </p>
-    <form action="/tautology" method="post" style="color:blue">
-        <label for="password">User id:</label>
-        <input type="text" name="password" required="required" /><br />
-        Safe version ? <input type="checkbox" name="safe" value=safe />
-        <input class="button" type="submit" value="submit" />
-    </form>
-
-    <h3>illegal queries example</h3>
-    <p>
-        In field user id insert (without double quotations)<br /> "(any number) ORDER BY 1", <br />"(any number) ORDER
-        BY 2", <br /> "(any number) ORDER BY 3". <br /> Because of the errors printed you can find out
-        more about of the structure of the database.
-    </p>
-    <form action="/info" method="post" style="color:blue">
-        <label for="password">User id:</label>
-        <input type="text" name="password" required="required" /><br />
-        Safe version ? <input type="checkbox" name="safe" value=safe />
-        <input class="button" type="submit" value="submit" />
-    </form>
-
-    <h3>blind injection example</h3>
-    <p>
-        In field user id insert (without double quotations) "(any number); SELECT pg_sleep(5)".
-        For example you can insert "1; SELECT pg_sleep(5)". <br /> This will pause the execution of the request for 5
-        seconds. That would mean that the database is vunerable to SQL injection (when not in safe mode).
-    </p>
-    <form action="/blind" method="post" style="color:blue">
-        <label for="password">User id:</label>
-        <input type="text" name="password" required="required" /><br />
-        Safe version ? <input type="checkbox" name="safe" value=safe />
-        <input class="button" type="submit" value="submit" />
-    </form>
-
-    <h3>union example</h3>
-    <p>
-        In field user id insert (without double quotations) "(any number) AND 1 = 0 UNION SELECT table_name, null FROM
-        information_schema.tables".<br />For example you can insert "1 AND 1 = 0 UNION SELECT table_name, null FROM
-        information_schema.tables".<br />On the next page (if not in safe mode) you'll see info about used tables in the
-        database.
-    </p>
-    <form action="/union" method="post" style="color:blue">
-        <label for="password">User id:</label>
-        <input type="text" name="password" required="required" /><br />
-        Safe version ? <input type="checkbox" name="safe" value=safe />
-        <input class="button" type="submit" value="submit" />
-    </form>
-
-    <h3>chaining example</h3>
-    <p>
-        In field user id insert (without double quotations) "(any number); DELETE FROM users".
-        For example you can insert "1; DELETE FROM users".<br />The user will be successfuly deleted if database is
-        prone to SQL injection. You can delete a user with some id and the next page will show an empty
-        query response.<br />But, be careful, if you refresh this page all users will be recreated to fill initial
-        database.
-    </p>
-    <form action="/chaining" method="post" style="color:blue">
-        <label for="password">User id:</label>
-        <input type="text" name="password" required="required" /><br />
-        Safe version ? <input type="checkbox" name="safe" value=safe />
-        <input class="button" type="submit" value="submit" />
-    </form>
+    <div class="row mx-5">
+        <div class="col mx-5">
+            <div class="card my-4 border-primary mx-5">
+                <div class="card-header">
+                    tautology:<br />
+                    In field user id insert: "(any number) OR 1 = 1" (without double quotations).
+                    For example you can insert "1 OR 1=1"
+                </div>
+                <div class="card-body">
+                    <p class="card-text">
+                    <form action="/tautology" method="post">
+                        <div class="form-check form-switch my-3">
+                            <label class="form-check-label" for="safe">Safe version ?</label>
+                            <input class="form-check-input" id="safe" type="checkbox" name="safe" value=safe />
+                        </div>
+                        <label for="password">User id:</label>
+                        <input class="form-control" type="text" name="password" required="required" />
+                        <input class="button btn btn-outline-primary w-100 my-2" type="submit" value="submit" />
+                    </form>
+                    </p>
+                </div>
+            </div>
+            <div class="card my-4 border-info mx-5">
+                <div class="card-header">
+                    illegal queries:<br />
+                    In field user id insert (without double quotations)<br /> "(any number) ORDER BY 1", <br />"(any
+                    number) ORDER BY 2", <br /> "(any number) ORDER BY 3". <br /> Because of the errors printed you can
+                    find out more about of the structure of the database.
+                </div>
+                <div class="card-body">
+                    <p class="card-text">
+                    <form action="/info" method="post">
+                        <div class="form-check form-switch my-3">
+                            <label class="form-check-label" for="safe">Safe version ?</label>
+                            <input class="form-check-input" id="safe" type="checkbox" name="safe" value=safe />
+                        </div>
+                        <label for="password">User id:</label>
+                        <input class="form-control" type="text" name="password" required="required" />
+                        <input class="button btn btn-outline-info w-100 my-2" type="submit" value="submit" />
+                    </form>
+                    </p>
+                </div>
+            </div>
+            <div class="card my-4 border-success mx-5">
+                <div class="card-header">
+                    blind injection:<br />
+                    In field user id insert (without double quotations) "(any number); SELECT pg_sleep(5)".
+                    For example you can insert "1; SELECT pg_sleep(5)". <br /> This will pause the execution of the
+                    request for 5 seconds. That would mean that the database is vunerable to SQL injection (when not in
+                    safe mode).
+                </div>
+                <div class="card-body">
+                    <p class="card-text">
+                    <form action="/blind" method="post">
+                        <div class="form-check form-switch my-3">
+                            <label class="form-check-label" for="safe">Safe version ?</label>
+                            <input class="form-check-input" id="safe" type="checkbox" name="safe" value=safe />
+                        </div>
+                        <label for="password">User id:</label>
+                        <input class="form-control" type="text" name="password" required="required" />
+                        <input class="button btn btn-outline-success w-100 my-2" type="submit" value="submit" />
+                    </form>
+                    </p>
+                </div>
+            </div>
+            <div class="card my-4 border-warning mx-5">
+                <div class="card-header">
+                    union:<br />
+                    In field user id insert (without double quotations) "(any number) AND 1 = 0 UNION SELECT table_name,
+                    null FROM information_schema.tables".<br />For example you can insert "1 AND 1 = 0 UNION SELECT
+                    table_name, null FROM information_schema.tables".<br />On the next page (if not in safe mode) you'll
+                    see info about used tables in the database.
+                </div>
+                <div class="card-body">
+                    <p class="card-text">
+                    <form action="/union" method="post">
+                        <div class="form-check form-switch my-3">
+                            <label class="form-check-label" for="safe">Safe version ?</label>
+                            <input class="form-check-input" id="safe" type="checkbox" name="safe" value=safe />
+                        </div>
+                        <label for="password">User id:</label>
+                        <input class="form-control" type="text" name="password" required="required" />
+                        <input class="button btn btn-outline-warning w-100 my-2" type="submit" value="submit" />
+                    </form>
+                    </p>
+                </div>
+            </div>
+            <div class="card my-4 border-danger mx-5">
+                <div class="card-header">
+                    chaining:<br />
+                    In field user id insert (without double quotations) "(any number); DELETE FROM users".
+                    For example you can insert "1; DELETE FROM users".<br />The user will be successfuly deleted if
+                    database is
+                    prone to SQL injection. You can delete a user with some id and the next page will show an empty
+                    query response.<br />But, be careful, if you refresh this page all users will be recreated to fill
+                    initial
+                    database.
+                </div>
+                <div class="card-body">
+                    <p class="card-text">
+                    <form action="/chaining" method="post">
+                        <div class="form-check form-switch my-3">
+                            <label class="form-check-label" for="safe">Safe version ?</label>
+                            <input class="form-check-input" id="safe" type="checkbox" name="safe" value=safe />
+                        </div>
+                        <label for="password">User id:</label>
+                        <input class="form-control" type="text" name="password" required="required" />
+                        <input class="button btn btn-outline-danger w-100 my-2" type="submit" value="submit" />
+                    </form>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <hr>
-    <h1 style="color:red">Broken Authentication</h1>
-    <h4 style="color: red">
+    <h1 class="mt-5 text-center">Broken Authentication</h1>
+    <h4 class="text-center">
         Click the button to toggle between the safe and the unsafe version of the app.<br />
         By default, the app uses Broken Authentication.
     </h4>
-
-    <button onclick="toggleSafe()" value="safe" name="safe">
-        <h3 id="toggleSafe">Click to activate safe mode</h3>
-    </button>
-    <br /><br />
-
-    <form id="safe_login" action='/login/safe' method="post" style="display: none;">
-        Email: <input type="email" placeholder="email" size="40" name="email"><br>
-        Password: <input type="password" placeholder="password" size="40" name="password"><br><br>
-        <div id="g-recaptcha" class="g-recaptcha" data-sitekey="6Lez9vgiAAAAACST2wY1LN7tscZnU2rPbGKERS30"></div>
-        <input type="submit" name="submit" value="submit">
-    </form>
-
-    <form id="unsafe_login" action='/login/unsafe' method="post">
-        Email: <input type="email" placeholder="email" size="40" name="email"><br>
-        Password: <input type="password" placeholder="password" size="40" name="password"><br><br>
-        <input type="submit" name="submit" value="submit">
-    </form>
+    <div class="row mx-5">
+        <div class="col mx-5">
+            <div class="card my-4 mx-5">
+                <div class="card-header">
+                    <div class="form-check form-switch my-3 mx-5">
+                        <label class="form-check-label" for="safe" id="toggleSafe">Click to activate safe mode</label>
+                        <input class="form-check-input" type="checkbox" onclick="toggleSafe()" value="safe" name="safe">
+                    </div>
+                </div>
+                <div class="card-body mx-5">
+                    <p class="card-text text-center">
+                    <form id="safe_login" action='/login/safe' method="post" style="display: none;">
+                        <input class="form-control w-100" type=" email" placeholder="email" size="40" name="email"><br>
+                        <input class="form-control w-100" type="password" placeholder="password" size="40"
+                            name="password">
+                        <div id="g-recaptcha" class="g-recaptcha mt-3"
+                            data-sitekey="6Lez9vgiAAAAACST2wY1LN7tscZnU2rPbGKERS30"></div>
+                        <input class="button btn btn-success w-100 mt-3" type="submit" name="submit" value="submit">
+                    </form>
+                    <form id="unsafe_login" action='/login/unsafe' method="post">
+                        <input class="form-control w-100" type="email" placeholder="email" size="40" name="email"><br>
+                        <input class="form-control w-100" type="password" placeholder="password" size="40"
+                            name="password">
+                        <input class="button btn btn-danger w-100 mt-3" type="submit" name="submit" value="submit">
+                    </form>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
