@@ -1,12 +1,133 @@
 <!doctype html>
 <html lang="en">
 
+<head>
+    <script src='https://www.google.com/recaptcha/api.js'></script>
+</head>
+
 <body>
-    <h1>Server running!</h1>
-    <h2>Pick a version of app: </h2>
-    <a href="/safe">safe</a> (minimal vunerabilities) <br />
-    <a href="/unsafe">unsafe</a> (many vunerabilities)
-    <script type="module" src="index.js"></script>
+    <h1 style="color:red">SQL injection</h1>
+    <h4 style="color: red">
+        Check the checkbox before the submit buttons if you want to use the safe version of the app.<br />
+        Otherwise, the app is prone to SQL injection attacks.
+    </h4>
+
+    <h3>tautology example</h3>
+    <p>
+        In field user id insert: "(any number) OR 1 = 1" (without double quotations).
+        For example you can insert "1 OR 1=1"
+    </p>
+    <form action="/tautology" method="post" style="color:blue">
+        <label for="password">User id:</label>
+        <input type="text" name="password" required="required" /><br />
+        Safe version ? <input type="checkbox" name="safe" value=safe />
+        <input class="button" type="submit" value="submit" />
+    </form>
+
+    <h3>illegal queries example</h3>
+    <p>
+        In field user id insert (without double quotations)<br /> "(any number) ORDER BY 1", <br />"(any number) ORDER
+        BY 2", <br /> "(any number) ORDER BY 3". <br /> Because of the errors printed you can find out
+        more about of the structure of the database.
+    </p>
+    <form action="/info" method="post" style="color:blue">
+        <label for="password">User id:</label>
+        <input type="text" name="password" required="required" /><br />
+        Safe version ? <input type="checkbox" name="safe" value=safe />
+        <input class="button" type="submit" value="submit" />
+    </form>
+
+    <h3>blind injection example</h3>
+    <p>
+        In field user id insert (without double quotations) "(any number); SELECT pg_sleep(5)".
+        For example you can insert "1; SELECT pg_sleep(5)". <br /> This will pause the execution of the request for 5
+        seconds. That would mean that the database is vunerable to SQL injection (when not in safe mode).
+    </p>
+    <form action="/blind" method="post" style="color:blue">
+        <label for="password">User id:</label>
+        <input type="text" name="password" required="required" /><br />
+        Safe version ? <input type="checkbox" name="safe" value=safe />
+        <input class="button" type="submit" value="submit" />
+    </form>
+
+    <h3>union example</h3>
+    <p>
+        In field user id insert (without double quotations) "(any number) AND 1 = 0 UNION SELECT table_name, null FROM
+        information_schema.tables".<br />For example you can insert "1 AND 1 = 0 UNION SELECT table_name, null FROM
+        information_schema.tables".<br />On the next page (if not in safe mode) you'll see info about used tables in the
+        database.
+    </p>
+    <form action="/union" method="post" style="color:blue">
+        <label for="password">User id:</label>
+        <input type="text" name="password" required="required" /><br />
+        Safe version ? <input type="checkbox" name="safe" value=safe />
+        <input class="button" type="submit" value="submit" />
+    </form>
+
+    <h3>chaining example</h3>
+    <p>
+        In field user id insert (without double quotations) "(any number); DELETE FROM users".
+        For example you can insert "1; DELETE FROM users".<br />The user will be successfuly deleted if database is
+        prone to SQL injection. You can delete a user with some id and the next page will show an empty
+        query response.<br />But, be careful, if you refresh this page all users will be recreated to fill initial
+        database.
+    </p>
+    <form action="/chaining" method="post" style="color:blue">
+        <label for="password">User id:</label>
+        <input type="text" name="password" required="required" /><br />
+        Safe version ? <input type="checkbox" name="safe" value=safe />
+        <input class="button" type="submit" value="submit" />
+    </form>
+
+    <h1 style="color:red">Broken Authentication</h1>
+    <h4 style="color: red">
+        Check the checkbox if you want to use the safe version of the app.<br />
+        Otherwise, the app uses Broken Authentication.
+    </h4>
+
+    <button style="color:blue" onclick="toggleSafe()" value="safe" name="safe" id="toggleSafe">
+        Click to activate safe mode</button>
+    <br /><br />
+
+    <form id="comment_form" action='/login' method="post">
+        <input type="email" placeholder="email" size="40"><br>
+        <input type="password" placeholder="password" size="40"><br><br>
+        <div id="g-recaptcha" class="g-recaptcha" data-sitekey="6Lez9vgiAAAAACST2wY1LN7tscZnU2rPbGKERS30"
+            style="display:none">
+        </div>
+        <input type="submit" name="submit" value="submit">
+    </form>
 </body>
+
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/jquery.form/3.51/jquery.form.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $('#comment_form').submit(function () {
+            $(this).ajaxSubmit({
+                error: function (xhr) {
+                    status('Error: ' + xhr.status);
+                },
+                success: function (response) {
+                    console.log(response);
+                }
+            });
+            return false;
+        });
+    });
+</script>
+<script>
+    function toggleSafe() {
+        var captcha = document.getElementById("g-recaptcha");
+        var button = document.getElementById("toggleSafe")
+        if (captcha.style.display === "none") {
+            captcha.style.display = "block";
+            button.innerHTML = "Click to activate unsafe mode"
+        } else {
+            captcha.style.display = "none";
+            button.innerHTML = "Click to activate safe mode"
+        }
+    }
+</script>
 
 </html>

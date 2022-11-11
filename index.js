@@ -65,10 +65,18 @@ sequelize.sync().then(() => {
 });
 
 //http methods
-
 let fs = require('fs');
 
 app.get('/', async (req, res) => {
+    for (i = 0; i < 20; i++) {
+        User.destroy({ where: { id: i } })
+        User.create({
+            id: i,
+            username: "user" + String(i),
+            dob: "2022-10-10",
+            email: "mail@mail"
+        })
+    }
     res.writeHead(200, {
         'Content-Type': 'text/html'
     });
@@ -83,47 +91,11 @@ app.get('/', async (req, res) => {
     });
 })
 
-app.get('/safe', async (req, res) => {
-    res.writeHead(200, {
-        'Content-Type': 'text/html'
-    });
-    fs.readFile('./safe.html', null, function (error, data) {
-        if (error) {
-            res.writeHead(404);
-            res.write('Whoops! File not found!');
-        } else {
-            res.write(data);
-        }
-        res.end();
-    });
-})
-
-app.get('/unsafe', async (req, res) => {
-    for (i = 0; i < 20; i++) {
-        User.destroy({ where: { id: i } })
-        User.create({
-            id: i,
-            username: "user" + String(i),
-            dob: "2022-10-10",
-            email: "mail@mail"
-        })
-    }
-    res.writeHead(200, {
-        'Content-Type': 'text/html'
-    });
-    fs.readFile('./unsafe.html', null, function (error, data) {
-        if (error) {
-            res.writeHead(404);
-            res.write('Whoops! File not found!');
-        } else {
-            res.write(data);
-        }
-        res.end();
-    });
-})
-
-app.post('/unsafe/login', async (req, res) => {
+app.post('/tautology', async (req, res) => {
     const data = req.body;
+
+    if (data.safe) return safeQuery(req, res)
+
     const query = `SELECT * FROM users WHERE id = ${data.password}`;
     client.query(query, (err, rows) => {
         if (err) {
@@ -134,8 +106,11 @@ app.post('/unsafe/login', async (req, res) => {
     });
 })
 
-app.post('/unsafe/info', async (req, res) => {
+app.post('/info', async (req, res) => {
     const data = req.body;
+
+    if (data.safe) return safeQuery(req, res)
+
     const query = `SELECT email, dob FROM users WHERE id = ${data.password}`;
     client.query(query, (err, rows) => {
         if (err) {
@@ -146,8 +121,11 @@ app.post('/unsafe/info', async (req, res) => {
     });
 })
 
-app.post('/unsafe/blind', async (req, res) => {
+app.post('/blind', async (req, res) => {
     const data = req.body;
+
+    if (data.safe) return safeQuery(req, res)
+
     const query = `SELECT id FROM users WHERE id = ${data.password}`;
     client.query(query, (err, rows) => {
         if (err) {
@@ -158,20 +136,26 @@ app.post('/unsafe/blind', async (req, res) => {
     });
 })
 
-app.post('/unsafe/union', async (req, res) => {
+app.post('/union', async (req, res) => {
     const data = req.body;
+
+    if (data.safe) return safeQuery(req, res)
+
     const query = `SELECT username, id FROM users WHERE id = ${data.password}`;
     client.query(query, (err, rows) => {
         if (err) {
             res.send(err)
             return
         }
-        res.send(json({ data: rows.rows }));
+        res.json({ data: rows.rows });
     });
 })
 
-app.post('/unsafe/chaining', async (req, res) => {
+app.post('/chaining', async (req, res) => {
     const data = req.body;
+
+    if (data.safe) return safeQuery(req, res)
+
     const query = `SELECT id FROM users WHERE id = ${data.password}`;
     client.query(query, (err, rows) => {
         if (err) {
@@ -191,8 +175,7 @@ function validInput(input) {
     }
 }
 
-
-app.post('/safe/login', async (req, res) => {
+function safeQuery(req, res) {
     const data = req.body;
     if (!validInput(data.password)) {
         res.send("User id is a numeric value!")
@@ -211,4 +194,44 @@ app.post('/safe/login', async (req, res) => {
     }).catch(err => {
         res.send("No user with id:" + data.password)
     })
-})
+}
+
+var bouncer = require("express-bouncer")(500, 900000);
+var request = require('request');
+
+bouncer.whitelist.push("127.0.0.1");
+
+bouncer.blocked = function (req, res, next, remaining) {
+    res.send(429, "Too many requests have been made, " +
+        "please wait " + remaining / 1000 + " seconds");
+};
+
+app.post("/login", bouncer.block, function (req, res) {
+    // if (LoginFailed) {
+    //     res.send("Login failed")
+    // } else {
+    bouncer.reset(req);
+    // g-recaptcha-response is the key that browser will generate upon form submit.
+    // if its blank or null means user has not selected the captcha, so return the error.
+    if (req.body['g-recaptcha-response'] === undefined
+        || req.body['g-recaptcha-response'] === ''
+        || req.body['g-recaptcha-response'] === null) {
+        console.log("resjson")
+        return res.json({ "responseCode": 1, "responseDesc": "Please select captcha" });
+    }
+    // Put your secret key here.
+    var secretKey = "6Lez9vgiAAAAAJBWfCUwU7JwMejjeTVNvyYb_hxw";
+    // req.connection.remoteAddress will provide IP address of connected user.
+    var verificationUrl = "https://www.google.com/recaptcha/api/siteverify?secret="
+        + secretKey + "&response=" + req.body['g-recaptcha-response'] + "&remoteip=" + req.socket.remoteAddress;
+    // Hitting GET request to the URL, Google will respond with success or error scenario.
+    request(verificationUrl, function (error, response, body) {
+        body = JSON.parse(body);
+        // Success will be true or false depending upon captcha validation.
+        if (body.success !== undefined && !body.success) {
+            return res.json({ "not logged in": 500 })
+        }
+        return res.json({ "logged in": 200 })
+    });
+    // }
+});
