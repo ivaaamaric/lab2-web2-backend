@@ -9,7 +9,7 @@
     <h1 style="color:red">SQL injection</h1>
     <h4 style="color: red">
         Check the checkbox before the submit buttons if you want to use the safe version of the app.<br />
-        Otherwise, the app is prone to SQL injection attacks.
+        Otherwise, the app is vunerable to SQL injection attacks.
     </h4>
 
     <h3>tautology example</h3>
@@ -79,14 +79,16 @@
         <input class="button" type="submit" value="submit" />
     </form>
 
+    <hr>
     <h1 style="color:red">Broken Authentication</h1>
     <h4 style="color: red">
-        Check the checkbox if you want to use the safe version of the app.<br />
-        Otherwise, the app uses Broken Authentication.
+        Click the button to toggle between the safe and the unsafe version of the app.<br />
+        By default, the app uses Broken Authentication.
     </h4>
 
-    <button style="color:blue" onclick="toggleSafe()" value="safe" name="safe" id="toggleSafe">
-        Click to activate safe mode</button>
+    <button onclick="toggleSafe()" value="safe" name="safe">
+        <h3 id="toggleSafe">Click to activate safe mode</h3>
+    </button>
     <br /><br />
 
     <form id="safe_login" action='/login/safe' method="post" style="display: none;">
