@@ -33,7 +33,6 @@ client.connect(function (err) {
 const { Sequelize, DataTypes } = require("sequelize");
 const sequelize = new Sequelize('postgres://lab2_web2_user:KDd8PeRgFDdwZQroSQy4FCxEEsYwMQiE@dpg-cdjbjjsgqg433fds9qc0-a.oregon-postgres.render.com/lab2_web2?ssl=true');
 
-
 const User = sequelize.define("users", {
     id: {
         type: DataTypes.INTEGER,
@@ -52,6 +51,26 @@ const User = sequelize.define("users", {
     }
 });
 
+const safeLogin = sequelize.define("safeLogin", {
+    email: {
+        type: DataTypes.STRING,
+        primaryKey: true
+    },
+    password: {
+        type: DataTypes.STRING,
+    }
+});
+
+const unsafeLogin = sequelize.define("unsafeLogin", {
+    email: {
+        type: DataTypes.STRING,
+        primaryKey: true
+    },
+    password: {
+        type: DataTypes.STRING,
+    }
+});
+
 sequelize.authenticate().then(() => {
     console.log('Connection has been established successfully.');
 }).catch((error) => {
@@ -59,13 +78,16 @@ sequelize.authenticate().then(() => {
 });
 
 sequelize.sync().then(() => {
-    console.log('Users table created successfully!');
+    console.log('All tables created successfully!');
 }).catch((error) => {
     console.error('Unable to create table : ', error);
 });
 
 //http methods
 let fs = require('fs');
+
+const NodeRSA = require('node-rsa');
+const key = new NodeRSA({ b: 512 });
 
 app.get('/', async (req, res) => {
     for (i = 0; i < 20; i++) {
@@ -77,6 +99,16 @@ app.get('/', async (req, res) => {
             email: "mail@mail"
         })
     }
+    unsafeLogin.destroy({ where: { email: "user@user" } })
+    unsafeLogin.create({
+        email: "user@user",
+        password: "password123"
+    })
+    safeLogin.destroy({ where: { email: "user@user" } })
+    safeLogin.create({
+        email: "user@user",
+        password: key.encrypt("dKdLru9BZ6ArqAz5", 'base64')
+    })
     res.writeHead(200, {
         'Content-Type': 'text/html'
     });
@@ -207,34 +239,58 @@ bouncer.blocked = function (req, res, next, remaining) {
 };
 
 app.post("/login/safe", bouncer.block, function (req, res) {
-    // if (LoginFailed) {
-    //     res.send("Login failed")
-    // } else {
-    bouncer.reset(req);
-    // g-recaptcha-response is the key that browser will generate upon form submit.
-    // if its blank or null means user has not selected the captcha, so return the error.
-    if (req.body['g-recaptcha-response'] === undefined
-        || req.body['g-recaptcha-response'] === ''
-        || req.body['g-recaptcha-response'] === null) {
-        return res.json({ "responseCode": 1, "responseDesc": "Please select captcha" });
-    }
-    // Put your secret key here.
-    var secretKey = "6Lez9vgiAAAAAJBWfCUwU7JwMejjeTVNvyYb_hxw";
-    // req.connection.remoteAddress will provide IP address of connected user.
-    var verificationUrl = "https://www.google.com/recaptcha/api/siteverify?secret="
-        + secretKey + "&response=" + req.body['g-recaptcha-response'] + "&remoteip=" + req.socket.remoteAddress;
-    // Hitting GET request to the URL, Google will respond with success or error scenario.
-    request(verificationUrl, function (error, response, body) {
-        body = JSON.parse(body);
-        // Success will be true or false depending upon captcha validation.
-        if (body.success !== undefined && !body.success) {
-            return res.json({ "not logged in": 500 })
+    const data = req.body;
+    safeLogin.findOne({
+        where: {
+            email: data.email
         }
-        return res.json({ "logged in": 200 })
-    });
-    // }
+    }).then(value => {
+        if (value.length == 0) {
+            res.send("Invalid email or password")
+            return
+        }
+        if (data.password != key.decrypt(value.password, 'utf8')) {
+            res.send("Invalid email or password")
+            return
+        }
+        bouncer.reset(req);
+        if (req.body['g-recaptcha-response'] === undefined
+            || req.body['g-recaptcha-response'] === ''
+            || req.body['g-recaptcha-response'] === null) {
+            return res.json({ "responseCode": 1, "responseDesc": "Please select captcha" });
+        }
+        var secretKey = "6Lez9vgiAAAAAJBWfCUwU7JwMejjeTVNvyYb_hxw";
+        var verificationUrl = "https://www.google.com/recaptcha/api/siteverify?secret="
+            + secretKey + "&response=" + req.body['g-recaptcha-response'] + "&remoteip=" + req.socket.remoteAddress;
+        request(verificationUrl, function (error, response, body) {
+            body = JSON.parse(body);
+            if (body.success !== undefined && !body.success) {
+                return res.send("Not logged in :(")
+            }
+            return res.send("Logged in! :)")
+        });
+    }).catch(err => {
+        res.send("Invalid email or password")
+    })
 });
 
 app.post("/login/unsafe", function (req, res) {
-    res.send("ok")
+    const data = req.body;
+    unsafeLogin.findOne({
+        where: {
+            email: data.email
+        }
+    }).then(value => {
+        if (value.length == 0) {
+            res.send("Invalid email entered!")
+        } else {
+            if (value.password != data.password) {
+                res.send("Invalid password entered!")
+                return
+            }
+            res.send("Logged in :)")
+        }
+    }).catch(err => {
+        res.send("Invalid email entered!")
+    })
 });

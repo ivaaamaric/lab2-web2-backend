@@ -90,15 +90,15 @@
     <br /><br />
 
     <form id="safe_login" action='/login/safe' method="post" style="display: none;">
-        <input type="email" placeholder="email" size="40"><br>
-        <input type="password" placeholder="password" size="40"><br><br>
+        Email: <input type="email" placeholder="email" size="40" name="email"><br>
+        Password: <input type="password" placeholder="password" size="40" name="password"><br><br>
         <div id="g-recaptcha" class="g-recaptcha" data-sitekey="6Lez9vgiAAAAACST2wY1LN7tscZnU2rPbGKERS30"></div>
         <input type="submit" name="submit" value="submit">
     </form>
 
     <form id="unsafe_login" action='/login/unsafe' method="post">
-        <input type=" email" placeholder="email" size="40"><br>
-        <input type="password" placeholder="password" size="40"><br><br>
+        Email: <input type="email" placeholder="email" size="40" name="email"><br>
+        Password: <input type="password" placeholder="password" size="40" name="password"><br><br>
         <input type="submit" name="submit" value="submit">
     </form>
 </body>
