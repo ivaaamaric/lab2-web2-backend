@@ -89,12 +89,16 @@
         Click to activate safe mode</button>
     <br /><br />
 
-    <form id="comment_form" action='/login' method="post">
+    <form id="safe_login" action='/login/safe' method="post" style="display: none;">
         <input type="email" placeholder="email" size="40"><br>
         <input type="password" placeholder="password" size="40"><br><br>
-        <div id="g-recaptcha" class="g-recaptcha" data-sitekey="6Lez9vgiAAAAACST2wY1LN7tscZnU2rPbGKERS30"
-            style="display:none">
-        </div>
+        <div id="g-recaptcha" class="g-recaptcha" data-sitekey="6Lez9vgiAAAAACST2wY1LN7tscZnU2rPbGKERS30"></div>
+        <input type="submit" name="submit" value="submit">
+    </form>
+
+    <form id="unsafe_login" action='/login/unsafe' method="post">
+        <input type=" email" placeholder="email" size="40"><br>
+        <input type="password" placeholder="password" size="40"><br><br>
         <input type="submit" name="submit" value="submit">
     </form>
 </body>
@@ -118,13 +122,16 @@
 </script>
 <script>
     function toggleSafe() {
-        var captcha = document.getElementById("g-recaptcha");
+        var safe = document.getElementById("safe_login");
+        var unsafe = document.getElementById("unsafe_login");
         var button = document.getElementById("toggleSafe")
-        if (captcha.style.display === "none") {
-            captcha.style.display = "block";
+        if (safe.style.display === "none") {
+            safe.style.display = "block";
+            unsafe.style.display = "none"
             button.innerHTML = "Click to activate unsafe mode"
         } else {
-            captcha.style.display = "none";
+            safe.style.display = "none";
+            unsafe.style.display = "block"
             button.innerHTML = "Click to activate safe mode"
         }
     }

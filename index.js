@@ -206,7 +206,7 @@ bouncer.blocked = function (req, res, next, remaining) {
         "please wait " + remaining / 1000 + " seconds");
 };
 
-app.post("/login", bouncer.block, function (req, res) {
+app.post("/login/safe", bouncer.block, function (req, res) {
     // if (LoginFailed) {
     //     res.send("Login failed")
     // } else {
@@ -216,7 +216,6 @@ app.post("/login", bouncer.block, function (req, res) {
     if (req.body['g-recaptcha-response'] === undefined
         || req.body['g-recaptcha-response'] === ''
         || req.body['g-recaptcha-response'] === null) {
-        console.log("resjson")
         return res.json({ "responseCode": 1, "responseDesc": "Please select captcha" });
     }
     // Put your secret key here.
@@ -234,4 +233,8 @@ app.post("/login", bouncer.block, function (req, res) {
         return res.json({ "logged in": 200 })
     });
     // }
+});
+
+app.post("/login/unsafe", function (req, res) {
+    res.send("ok")
 });
